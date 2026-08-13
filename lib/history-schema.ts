@@ -29,6 +29,8 @@ export const KEY = {
   word: 'w/',
   passage: 'p/',
   meta: 'meta/',
+  /** Per-chapter verse coverage: bc/<CODE>/<bbb>/<ccc>. */
+  bibleChapter: 'bc/',
 } as const;
 
 export const META_KEY = {
@@ -36,6 +38,12 @@ export const META_KEY = {
   seq: 'meta/seq',
   migratedJsonV1: 'meta/migratedJsonV1',
   migratedPassagesV1: 'meta/migratedPassagesV1',
+  dailyGoalMinutes: 'meta/dailyGoalMinutes',
+  weeklyGoalMinutes: 'meta/weeklyGoalMinutes',
+  wordQuarantineCursor: 'meta/wordQuarantineCursor',
+  passageQuarantineCursor: 'meta/passageQuarantineCursor',
+  /** Active TranslationCode; absent means the bundled default. */
+  bibleTranslation: 'meta/bibleTranslation',
   inflight: 'meta/inflight',
 } as const;
 
