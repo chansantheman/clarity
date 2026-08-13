@@ -1,6 +1,6 @@
-import { AudioLinesIcon, Chart02Icon, Home07Icon } from '@hugeicons-pro/core-solid-rounded';
 import { useRouter } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
+import { AudioLines, ChartColumn, Home } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,9 +16,9 @@ import {
 } from '@/components/glass-tabs';
 
 const ITEMS: (GlassTabItem & { href: string })[] = [
-  { name: 'index', href: '/', label: 'Home', icon: Home07Icon },
-  { name: 'practice', href: '/practice', label: 'Practice', icon: AudioLinesIcon },
-  { name: 'analytics', href: '/analytics', label: 'Analytics', icon: Chart02Icon },
+  { name: 'index', href: '/', label: 'Home', icon: Home },
+  { name: 'practice', href: '/practice', label: 'Practice', icon: AudioLines },
+  { name: 'analytics', href: '/analytics', label: 'Analytics', icon: ChartColumn },
 ];
 
 /** Progressive blur over the status bar: strongest at the device's top edge,

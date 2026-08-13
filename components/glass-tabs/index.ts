@@ -1,5 +1,5 @@
 // Vendored from expo-glass-tabs (https://github.com/davidmokos/expo-glass-tabs),
-// MIT © David Mokos. Local changes: Hugeicons Pro glyphs instead of SF Symbols,
+// MIT © David Mokos. Local changes: Lucide glyphs instead of SF Symbols,
 // and light/dark themes that follow the system color scheme.
 export {
   GlassTabBar,

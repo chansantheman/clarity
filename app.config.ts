@@ -1,5 +1,7 @@
 import { ConfigContext, ExpoConfig } from 'expo/config';
 
+import withSceneDelegate from './plugins/with-scene-delegate';
+
 // app.json stays the base layer. This file overrides only what varies per app
 // variant, so `development`, `preview`, and `production` builds install side by
 // side. The variant comes from APP_VARIANT, stored in the EAS environments and
@@ -72,14 +74,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.ios,
       bundleIdentifier: getBundleId(),
       icon: iosIcon ?? config.ios?.icon,
+      // Discipleship Tech, Inc. Without this, every `expo prebuild`
+      // regenerates ios/*.pbxproj with no team, and Xcode refuses to build
+      // ("requires a development team") until it's picked again by hand.
+      appleTeamId: 'R23HRQJN98',
     },
     android: {
       ...config.android,
       package: getBundleId(),
     },
+    // Function-based plugins (withSceneDelegate) are valid at runtime but
+    // fall outside ExpoConfig['plugins']'s public (string | [string, any])
+    // type, hence the cast.
     plugins: [
       ...(config.plugins ?? []),
       ['expo-dev-client', { addGeneratedScheme: process.env.APP_VARIANT === 'development' }],
-    ],
+      withSceneDelegate,
+    ] as ExpoConfig['plugins'],
   };
 };

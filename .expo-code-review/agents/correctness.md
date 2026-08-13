@@ -25,11 +25,11 @@ flag them when the diff introduces one:
 - **Font weight.** Text weight must be set via `fontFamily` with the constants
   from `constants/fonts.ts` (`fonts.regular` … `fonts.heavy`). A `fontWeight`
   style on text makes iOS synthesize or fall back to the system font.
-- **Icons.** Only `HugeiconsIcon` from `@hugeicons/react-native` with icons from
-  the `@hugeicons-pro/core-stroke-rounded` / `core-solid-rounded` packages. An
-  icon import must correspond to a real file in the package's `dist/types`;
-  names with numeric suffixes are easy to guess wrong. No emoji or other icon
-  libraries as UI glyphs.
+- **Icons.** Only components imported directly from `lucide-react-native`. An
+  icon import must correspond to a real file in
+  `node_modules/lucide-react-native/dist/types/icons` (kebab-case filename →
+  PascalCase export) — don't guess names. No emoji or other icon libraries as
+  UI glyphs.
 - **dayKey parsing.** `dayKey()` in `lib/stats.ts` emits a LOCAL `YYYY-MM-DD`
   string. Passing it to `new Date(key)` parses UTC midnight and lands on the
   previous local day west of Greenwich. Any code that re-parses a dayKey must

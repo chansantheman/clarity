@@ -28,7 +28,7 @@ All history is stored on the device. There is no account and no server database.
 - Azure Speech pronunciation assessment for word-level accuracy (optional)
 - Expo Router API route + Vercel AI Gateway for the coaching text
 - MMKV for local storage
-- SF Pro Rounded and Hugeicons Pro for the UI
+- SF Pro Rounded and Lucide for the UI
 
 ## Getting started
 
@@ -54,7 +54,6 @@ session engine.
 | `EXPO_PUBLIC_AZURE_SPEECH_KEY`    | No       | Word-level pronunciation scoring                |
 | `EXPO_PUBLIC_AZURE_SPEECH_REGION` | No       | Azure region for the key above                  |
 | `APP_VARIANT`                     | Local    | `development`, `preview`, or `production`       |
-| `HUGEICONS_TOKEN`                 | Install  | Needed to install the Hugeicons Pro packages    |
 
 Without Azure, sessions still score. The app falls back to its own alignment of
 the transcript against the passage text.

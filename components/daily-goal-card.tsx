@@ -1,7 +1,6 @@
-import { Mic02Icon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Mic } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated, {
@@ -130,7 +129,7 @@ export function DailyGoalCard({ percent, onStartPractice }: DailyGoalCardProps) 
 
   const buttonContent = (
     <>
-      <HugeiconsIcon icon={Mic02Icon} size={22} color={theme.buttonLabel} />
+      <Mic size={22} color={theme.buttonLabel} fill={theme.buttonLabel} />
       <Text style={[styles.buttonLabel, { color: theme.buttonLabel }]}>Start Practicing</Text>
     </>
   );

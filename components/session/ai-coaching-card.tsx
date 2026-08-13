@@ -1,6 +1,5 @@
-import { Refresh01Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { RefreshCw } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
@@ -100,7 +99,7 @@ export function AiCoachingCard({ result }: AiCoachingCardProps) {
                 { backgroundColor: ICON_BACKGROUND[scheme] },
                 pressed && styles.pressed,
               ]}>
-              <HugeiconsIcon icon={Refresh01Icon} size={17} color={colors.accent} strokeWidth={1.8} />
+              <RefreshCw size={17} color={colors.accent} strokeWidth={1.8} />
               <Text style={[styles.retryLabel, { color: colors.accent }]}>Try again</Text>
             </Pressable>
           </View>

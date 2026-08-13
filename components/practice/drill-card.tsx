@@ -1,11 +1,11 @@
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { DRILL_META } from '@/constants/drills';
 import { fonts } from '@/constants/fonts';
-import { SKILL_ICONS, SKILL_LABELS } from '@/constants/metrics';
+import { SKILL_LABELS } from '@/constants/metrics';
+import { SKILL_ICONS } from '@/constants/skill-icons';
 import type { Passage } from '@/types/session';
 
 const THEME = {
@@ -37,6 +37,7 @@ export function DrillCard({ drill, onStart }: DrillCardProps) {
   const hasGlass = isLiquidGlassAvailable();
   const meta = DRILL_META[drill.id];
   const foreground = scheme === 'dark' ? '#FFFFFF' : '#111114';
+  const SkillIcon = meta ? SKILL_ICONS[meta.skill] : SKILL_ICONS.accuracy;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -46,12 +47,7 @@ export function DrillCard({ drill, onStart }: DrillCardProps) {
   const body = (
     <>
       <View style={[styles.iconBed, { backgroundColor: theme.iconBed }]}>
-        <HugeiconsIcon
-          icon={meta ? SKILL_ICONS[meta.skill] : SKILL_ICONS.accuracy}
-          size={22}
-          color={foreground}
-          strokeWidth={1.5}
-        />
+        <SkillIcon size={22} color={foreground} strokeWidth={1.5} />
       </View>
       <Text style={[styles.title, { color: foreground }]} numberOfLines={1}>
         {drill.title}

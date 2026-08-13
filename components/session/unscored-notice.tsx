@@ -1,5 +1,4 @@
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { MicOff01Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { MicOff } from 'lucide-react-native';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
@@ -24,7 +23,7 @@ export function UnscoredNotice({ title, detail }: UnscoredNoticeProps) {
   return (
     <View style={styles.container}>
       <View style={[styles.iconTile, { backgroundColor: theme.iconTile }]}>
-        <HugeiconsIcon icon={MicOff01Icon} size={26} color={theme.label} strokeWidth={1.5} />
+        <MicOff size={26} color={theme.label} strokeWidth={1.5} />
       </View>
       <Text style={[styles.title, { color: theme.ink }]}>{title}</Text>
       <Text style={[styles.detail, { color: theme.caption }]}>{detail}</Text>

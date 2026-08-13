@@ -1,6 +1,5 @@
-import { Rotate01Icon, Tick02Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { Check, RotateCcw } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,14 +26,14 @@ export function ResultsFooter({ onRetry, onDone }: ResultsFooterProps) {
 
   const retryContent = (
     <>
-      <HugeiconsIcon icon={Rotate01Icon} size={20} color={foreground} strokeWidth={1.8} />
+      <RotateCcw size={20} color={foreground} strokeWidth={1.8} />
       <Text style={[styles.pillLabel, { color: foreground }]}>Retry</Text>
     </>
   );
 
   const doneContent = (
     <>
-      <HugeiconsIcon icon={Tick02Icon} size={20} color={colors.pillDarkText} strokeWidth={2} />
+      <Check size={20} color={colors.pillDarkText} strokeWidth={2} />
       <Text style={[styles.pillLabel, { color: colors.pillDarkText }]}>Done</Text>
     </>
   );

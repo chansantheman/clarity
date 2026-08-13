@@ -1,8 +1,8 @@
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
-import { metricColors, SKILL_ICONS, SKILL_LABELS } from '@/constants/metrics';
+import { metricColors, SKILL_LABELS } from '@/constants/metrics';
+import { SKILL_ICONS } from '@/constants/skill-icons';
 import type { SkillKey } from '@/types/history';
 
 import { DeltaLabel } from './delta-label';
@@ -38,18 +38,14 @@ export type SkillRowProps = {
 export function SkillRow({ skill, score, caption, delta, focus = false }: SkillRowProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const theme = metricColors[scheme];
+  const SkillIcon = SKILL_ICONS[skill];
 
   return (
     <View style={styles.row}>
       <View style={styles.header}>
         {/* Fixed-width slot keeps names in one vertical lane across all rows. */}
         <View style={styles.iconSlot}>
-          <HugeiconsIcon
-            icon={SKILL_ICONS[skill]}
-            size={18}
-            color={theme.caption}
-            strokeWidth={1.8}
-          />
+          <SkillIcon size={18} color={theme.caption} strokeWidth={1.8} />
         </View>
 
         <View style={styles.text}>

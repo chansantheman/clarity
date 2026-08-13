@@ -1,12 +1,5 @@
-import {
-  AnalyticsUpIcon,
-  CheckmarkBadge01Icon,
-  Clock01Icon,
-  FireIcon,
-  Mic01Icon,
-  StarIcon,
-} from '@hugeicons-pro/core-stroke-rounded';
 import { GlassContainer } from 'expo-glass-effect';
+import { BadgeCheck, Clock, Flame, Mic, Star, TrendingUp } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -79,7 +72,7 @@ export default function AnalyticsScreen() {
     // practice row along with it.
     if (best && bestScore != null) {
       rows.push({
-        icon: StarIcon,
+        icon: Star,
         title: 'Best score',
         // `contentTitle` is snapshotted on the record, so this survives deleting
         // a custom passage and is right for drills too, which the built-ins-only
@@ -94,7 +87,7 @@ export default function AnalyticsScreen() {
     }
     if (longest) {
       rows.push({
-        icon: FireIcon,
+        icon: Flame,
         title: 'Longest streak',
         caption: formatDayRange(longest.startMs, longest.endMs),
         value: longest.length,
@@ -102,7 +95,7 @@ export default function AnalyticsScreen() {
       });
     }
     rows.push({
-      icon: Clock01Icon,
+      icon: Clock,
       title: 'Total practice',
       caption: `across ${t.sessions} ${t.sessions === 1 ? 'session' : 'sessions'}`,
       value: t.minutes >= 60 ? Math.round(t.minutes / 60) : Math.round(t.minutes),
@@ -144,7 +137,7 @@ export default function AnalyticsScreen() {
         {header}
         <IntroReveal order={2} fade={false} style={styles.sectionCard}>
           <EmptyStateCard
-            icon={AnalyticsUpIcon}
+            icon={TrendingUp}
             title="No analytics yet"
             subtitle="Finish a practice session and your speaking score, skills, and records will show up here."
           />
@@ -206,7 +199,7 @@ export default function AnalyticsScreen() {
         <GlassContainer style={styles.counterGroup}>
           <View style={styles.counterRow}>
             <CounterCard
-              icon={Clock01Icon}
+              icon={Clock}
               label="Practice time"
               value={summary.minutes}
               unit="min"
@@ -214,7 +207,7 @@ export default function AnalyticsScreen() {
               deltaSuffix="min"
             />
             <CounterCard
-              icon={Mic01Icon}
+              icon={Mic}
               label="Sessions"
               value={summary.sessions}
               unit={summary.sessions === 1 ? 'run' : 'runs'}
@@ -223,7 +216,7 @@ export default function AnalyticsScreen() {
           </View>
           <View style={styles.counterRow}>
             <CounterCard
-              icon={FireIcon}
+              icon={Flame}
               label="Day streak"
               value={summary.streak}
               unit={summary.streak === 1 ? 'day' : 'days'}
@@ -233,7 +226,7 @@ export default function AnalyticsScreen() {
             {/* All-time by nature: a word is mastered or it isn't, so this one
                 carries no window delta. */}
             <CounterCard
-              icon={CheckmarkBadge01Icon}
+              icon={BadgeCheck}
               label="Words mastered"
               value={mastered}
               unit={mastered === 1 ? 'word' : 'words'}

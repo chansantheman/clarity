@@ -1,7 +1,6 @@
-import { PauseIcon, PlayIcon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Pause, Play } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
@@ -49,13 +48,17 @@ export function PlaybackPill({ result }: PlaybackPillProps) {
           { backgroundColor: colors.pillDark },
           pressed && { opacity: 0.8 },
         ]}>
-        <HugeiconsIcon
-          icon={playback.isPlaying ? PauseIcon : PlayIcon}
-          size={18}
-          color={colors.pillDarkText}
-          // Optical centering: the triangle reads left-heavy in a circle.
-          style={playback.isPlaying ? undefined : { marginLeft: 2 }}
-        />
+        {playback.isPlaying ? (
+          <Pause size={18} color={colors.pillDarkText} fill={colors.pillDarkText} />
+        ) : (
+          <Play
+            size={18}
+            color={colors.pillDarkText}
+            fill={colors.pillDarkText}
+            // Optical centering: the triangle reads left-heavy in a circle.
+            style={{ marginLeft: 2 }}
+          />
+        )}
       </Pressable>
 
       <View style={styles.waveform}>

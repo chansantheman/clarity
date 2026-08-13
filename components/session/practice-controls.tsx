@@ -1,7 +1,5 @@
-import { PauseIcon, PlayIcon, StopIcon } from '@hugeicons-pro/core-solid-rounded';
-import { Rotate01Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { Pause, Play, RotateCcw, Square } from 'lucide-react-native';
 import {
   ActivityIndicator,
   Pressable,
@@ -65,11 +63,11 @@ export function PracticeControls({
     </>
   ) : (
     <>
-      <HugeiconsIcon
-        icon={paused ? PlayIcon : PauseIcon}
-        size={20}
-        color={colors.pillDarkText}
-      />
+      {paused ? (
+        <Play size={20} color={colors.pillDarkText} fill={colors.pillDarkText} />
+      ) : (
+        <Pause size={20} color={colors.pillDarkText} fill={colors.pillDarkText} />
+      )}
       <Text style={[styles.pillLabel, { color: colors.pillDarkText }]}>
         {paused ? 'Resume' : 'Pause'}
       </Text>
@@ -151,7 +149,7 @@ export function PracticeControls({
                   { backgroundColor: colors.circleButton },
                   (pressed || processing) && styles.pressed,
                 ]}>
-                <HugeiconsIcon icon={Rotate01Icon} size={24} color={foreground} strokeWidth={1.8} />
+                <RotateCcw size={24} color={foreground} strokeWidth={1.8} />
               </Pressable>
 
               <Pressable
@@ -173,7 +171,7 @@ export function PracticeControls({
                   { backgroundColor: colors.circleButton },
                   (pressed || processing) && styles.pressed,
                 ]}>
-                <HugeiconsIcon icon={StopIcon} size={22} color={foreground} />
+                <Square size={22} color={foreground} fill={foreground} />
               </Pressable>
             </View>
           </>

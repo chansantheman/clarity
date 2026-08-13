@@ -1,5 +1,5 @@
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import type { LucideIcon } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
@@ -13,7 +13,7 @@ import { metricColors } from '@/constants/metrics';
  * using different names or units for the same thing.
  */
 export type RecordRow = {
-  icon: IconSvgElement;
+  icon: LucideIcon;
   title: string;
   caption: string;
   /** Rendered as `NN /100` when true, otherwise as the raw value plus `unit`. */
@@ -34,7 +34,7 @@ export function RecordsCard({ rows }: { rows: readonly RecordRow[] }) {
           {i > 0 && <View style={[styles.divider, { backgroundColor: theme.divider }]} />}
           <View style={styles.row}>
             <View style={[styles.iconTile, { backgroundColor: theme.iconTile }]}>
-              <HugeiconsIcon icon={row.icon} size={20} color={theme.ink} strokeWidth={1.7} />
+              <row.icon size={20} color={theme.ink} strokeWidth={1.7} />
             </View>
             <View style={styles.text}>
               <Text style={[styles.title, { color: theme.ink }]} numberOfLines={1}>

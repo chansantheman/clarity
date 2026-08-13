@@ -9,16 +9,13 @@
  *   3. Effort counters (practice time, sessions, streak).
  *
  * PURE module — no React, no imports from `services/`. Safe under bun.
+ *
+ * Skill icons live in `constants/skill-icons.tsx` instead of here: they're
+ * React components (from lucide-react-native), and importing one drags in
+ * react-native-svg → react-native, which breaks under bun's plain runtime.
+ * `lib/score.ts` and `lib/stats.ts` import this module for `SCORE_BANDS` and
+ * `SKILL_ORDER`, and their test scripts must keep running without Metro.
  */
-
-import type { IconSvgElement } from '@hugeicons/react-native';
-import {
-  AudioWave01Icon,
-  Chatting01Icon,
-  DashboardSpeed01Icon,
-  MaskTheater01Icon,
-  Target01Icon,
-} from '@hugeicons-pro/core-stroke-rounded';
 
 import type { SkillKey } from '@/types/history';
 
@@ -40,14 +37,6 @@ export const SKILL_LABELS: Record<SkillKey, string> = {
   pace: 'Pacing',
   fillers: 'Fillers',
   intonation: 'Expression',
-};
-
-export const SKILL_ICONS: Record<SkillKey, IconSvgElement> = {
-  accuracy: Target01Icon,
-  fluency: AudioWave01Icon,
-  pace: DashboardSpeed01Icon,
-  fillers: Chatting01Icon,
-  intonation: MaskTheater01Icon,
 };
 
 /**

@@ -1,7 +1,6 @@
-import { PlayIcon, VolumeHighIcon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Play, Volume2 } from 'lucide-react-native';
 import { Fragment } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
@@ -76,7 +75,7 @@ export function WordsToMaster({ words, onPracticeAll, onSpeak }: WordsToMasterPr
             { backgroundColor: theme.badgeBg },
             pressed && { opacity: 0.85 },
           ]}>
-          <HugeiconsIcon icon={PlayIcon} size={13} color={theme.badgeText} />
+          <Play size={13} color={theme.badgeText} fill={theme.badgeText} />
           <Text style={[styles.practiceAllLabel, { color: theme.badgeText }]}>Practice all</Text>
         </Pressable>
       </View>
@@ -101,7 +100,7 @@ export function WordsToMaster({ words, onPracticeAll, onSpeak }: WordsToMasterPr
                 { backgroundColor: theme.speakerBg },
                 pressed && { opacity: 0.6 },
               ]}>
-              <HugeiconsIcon icon={VolumeHighIcon} size={19} color={theme.speakerIcon} />
+              <Volume2 size={19} color={theme.speakerIcon} fill={theme.speakerIcon} />
             </Pressable>
           </View>
         </Fragment>

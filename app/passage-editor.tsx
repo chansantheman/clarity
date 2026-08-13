@@ -1,8 +1,7 @@
-import { Book02Icon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
+import { BookOpen } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -114,10 +113,10 @@ export default function PassageEditorScreen() {
 
   const buttonContent = (
     <>
-      <HugeiconsIcon
-        icon={Book02Icon}
+      <BookOpen
         size={22}
         color={canSave ? theme.buttonLabel : theme.buttonDisabledLabel}
+        fill={canSave ? theme.buttonLabel : theme.buttonDisabledLabel}
       />
       <Text
         style={[

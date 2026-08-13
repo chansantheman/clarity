@@ -1,7 +1,6 @@
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { PlusSignIcon } from '@hugeicons-pro/core-stroke-rounded';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Plus } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { AnimatedDashedBorder } from '@/components/animated-dashed-border';
@@ -128,12 +127,7 @@ export function AddPassageRow({ onPress }: { onPress: () => void }) {
         gapLength={5}>
         <View style={styles.addRow}>
           <View style={[styles.thumb, styles.addThumb, { borderColor: theme.dashed }]}>
-            <HugeiconsIcon
-              icon={PlusSignIcon}
-              size={22}
-              color={theme.secondary}
-              strokeWidth={1.5}
-            />
+            <Plus size={22} color={theme.secondary} strokeWidth={1.5} />
           </View>
           <View style={styles.textCol}>
             <Text style={[styles.title, { color: theme.foreground }]}>Add your own</Text>

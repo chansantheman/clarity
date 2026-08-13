@@ -1,10 +1,9 @@
 import { router } from 'expo-router';
+import { TrendingUp } from 'lucide-react-native';
+import { useMemo } from 'react';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { AnalyticsUpIcon } from '@hugeicons-pro/core-stroke-rounded';
-import { useMemo } from 'react';
 
 import { DailyGoalCard } from '@/components/daily-goal-card';
 import { EmptyStateCard } from '@/components/empty-state-card';
@@ -127,7 +126,7 @@ export default function HomeScreen() {
           />
         ) : (
           <EmptyStateCard
-            icon={AnalyticsUpIcon}
+            icon={TrendingUp}
             title="No progress yet"
             subtitle="Finish your first practice session and your best score, streak, and minutes will show up here."
           />

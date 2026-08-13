@@ -1,5 +1,5 @@
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import type { LucideIcon } from 'lucide-react-native';
 import { StyleSheet, Text, useColorScheme, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
@@ -16,7 +16,7 @@ import { DeltaLabel } from './delta-label';
  * of practice to color it by.
  */
 export type CounterCardProps = {
-  icon: IconSvgElement;
+  icon: LucideIcon;
   label: string;
   value: number;
   /** Sits after the value, e.g. "min", "runs", "days". */
@@ -29,7 +29,7 @@ export type CounterCardProps = {
 };
 
 export function CounterCard({
-  icon,
+  icon: Icon,
   label,
   value,
   unit,
@@ -44,7 +44,7 @@ export function CounterCard({
   const body = (
     <>
       <View style={styles.header}>
-        <HugeiconsIcon icon={icon} size={15} color={theme.unit} strokeWidth={1.9} />
+        <Icon size={15} color={theme.unit} strokeWidth={1.9} />
         <Text style={[styles.label, { color: theme.label }]} numberOfLines={1}>
           {label}
         </Text>

@@ -1,8 +1,7 @@
-import { PlayIcon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Play } from 'lucide-react-native';
 import { memo } from 'react';
 import {
   Platform,
@@ -176,7 +175,7 @@ const PassageCard = memo(function PassageCard({
 
   const buttonContent = (
     <>
-      <HugeiconsIcon icon={PlayIcon} size={15} color="#FFFFFF" />
+      <Play size={15} color="#FFFFFF" fill="#FFFFFF" />
       <Text style={styles.buttonLabel}>Start</Text>
     </>
   );

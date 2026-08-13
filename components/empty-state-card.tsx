@@ -1,5 +1,5 @@
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import type { LucideIcon } from 'lucide-react-native';
 import { StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
@@ -24,14 +24,14 @@ const THEME = {
 } as const;
 
 export type EmptyStateCardProps = {
-  icon: IconSvgElement;
+  icon: LucideIcon;
   title: string;
   subtitle: string;
 };
 
 /** Frosted placeholder shown where a data section has nothing to display yet —
  * states plainly that there's no data rather than faking any. */
-export function EmptyStateCard({ icon, title, subtitle }: EmptyStateCardProps) {
+export function EmptyStateCard({ icon: Icon, title, subtitle }: EmptyStateCardProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const theme = THEME[scheme];
   const hasGlass = isLiquidGlassAvailable();
@@ -39,7 +39,7 @@ export function EmptyStateCard({ icon, title, subtitle }: EmptyStateCardProps) {
   const body = (
     <>
       <View style={[styles.iconWrap, { backgroundColor: theme.iconBg }]}>
-        <HugeiconsIcon icon={icon} size={24} color={theme.icon} strokeWidth={1.5} />
+        <Icon size={24} color={theme.icon} strokeWidth={1.5} />
       </View>
       <Text style={[styles.title, { color: theme.title }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: theme.subtitle }]}>{subtitle}</Text>

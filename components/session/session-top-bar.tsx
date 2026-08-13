@@ -1,6 +1,5 @@
-import { ArrowDown01Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { ChevronDown } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,7 +62,7 @@ export function SessionTopBar({ onDismiss, onTextSize, children }: SessionTopBar
       />
       <View style={[styles.bar, { top: insets.top + 6 }]} pointerEvents="box-none">
         <CircleButton onPress={onDismiss}>
-          <HugeiconsIcon icon={ArrowDown01Icon} size={24} color={foreground} strokeWidth={2} />
+          <ChevronDown size={24} color={foreground} strokeWidth={2} />
         </CircleButton>
 
         <View style={styles.center} pointerEvents="none">

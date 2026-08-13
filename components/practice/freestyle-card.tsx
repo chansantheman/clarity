@@ -1,8 +1,6 @@
-import { Mic02Icon } from '@hugeicons-pro/core-solid-rounded';
-import { ShuffleIcon } from '@hugeicons-pro/core-stroke-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { Mic, Shuffle } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { fonts } from '@/constants/fonts';
@@ -56,12 +54,12 @@ export function FreestyleCard({ topic, onShuffle, onStart }: FreestyleCardProps)
   };
 
   const shuffleContent = (
-    <HugeiconsIcon icon={ShuffleIcon} size={18} color={theme.foreground} strokeWidth={1.5} />
+    <Shuffle size={18} color={theme.foreground} strokeWidth={1.5} />
   );
 
   const buttonContent = (
     <>
-      <HugeiconsIcon icon={Mic02Icon} size={20} color={theme.buttonLabel} />
+      <Mic size={20} color={theme.buttonLabel} fill={theme.buttonLabel} />
       <Text style={[styles.buttonLabel, { color: theme.buttonLabel }]}>Start Speaking</Text>
     </>
   );

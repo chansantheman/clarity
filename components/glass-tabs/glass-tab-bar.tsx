@@ -1,6 +1,6 @@
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import type { LucideIcon } from 'lucide-react-native';
 import { Children, createContext, use, useCallback, useEffect, useMemo } from 'react';
 import {
   Platform,
@@ -88,8 +88,8 @@ const LIGHT_THEME: GlassTabBarTheme = {
 export type GlassTabItem = {
   name: string;
   label: string;
-  /** Hugeicons solid glyph — used for both tint layers. */
-  icon: IconSvgElement;
+  /** Filled glyph — used for both tint layers. */
+  icon: LucideIcon;
 };
 
 type BarContextValue = {
@@ -365,7 +365,7 @@ export function GlassTabBar({
 function TabGlyph({ item, tint }: { item: GlassTabItem; tint: string }) {
   return (
     <View style={{ height: ICON_SIZE, justifyContent: 'center' }}>
-      <HugeiconsIcon icon={item.icon} size={ICON_SIZE} color={tint} />
+      <item.icon size={ICON_SIZE} color={tint} fill={tint} />
     </View>
   );
 }

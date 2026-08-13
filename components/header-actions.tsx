@@ -1,6 +1,5 @@
-import { FireIcon, User03Icon } from '@hugeicons-pro/core-solid-rounded';
-import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassContainer, GlassView } from 'expo-glass-effect';
+import { CircleUser, Flame } from 'lucide-react-native';
 import { StyleSheet, Text, useColorScheme } from 'react-native';
 
 import { palette } from '@/constants/colors';
@@ -18,11 +17,11 @@ export function HeaderActions({ streak }: { streak: number }) {
   return (
     <GlassContainer spacing={8} style={styles.row}>
       <GlassView isInteractive style={styles.streak}>
-        <HugeiconsIcon icon={FireIcon} size={24} color={STREAK_FLAME} />
+        <Flame size={24} color={STREAK_FLAME} fill={STREAK_FLAME} />
         <Text style={[styles.streakCount, { color: colors.foreground }]}>{streak}</Text>
       </GlassView>
       <GlassView isInteractive style={styles.avatar}>
-        <HugeiconsIcon icon={User03Icon} size={24} color={dark ? '#8E8E93' : '#98989E'} />
+        <CircleUser size={24} color={dark ? '#8E8E93' : '#98989E'} />
       </GlassView>
     </GlassContainer>
   );

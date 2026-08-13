@@ -4,9 +4,6 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~57.0.7",
-    "@hugeicons-pro/core-solid-rounded": "^4.2.3",
-    "@hugeicons-pro/core-stroke-rounded": "^4.2.3",
-    "@hugeicons/react-native": "^1.0.15",
     "@lottiefiles/dotlottie-react": "^0.19.12",
     "@react-native-masked-view/masked-view": "0.3.2",
     "ai": "^7.0.36",
@@ -28,6 +25,7 @@
     "expo-system-ui": "~57.0.1",
     "expo-updates": "~57.0.12",
     "lottie-react-native": "~7.3.8",
+    "lucide-react-native": "^1.31.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
@@ -45,6 +43,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@expo/config-plugins": "57.0.6",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
