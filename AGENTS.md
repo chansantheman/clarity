@@ -40,12 +40,37 @@ Assume your training is stale on SDK 57. For every Expo API you use: verify it a
 docs or `node_modules`, state whether it needs a config plugin, a dev build (vs Expo Go), or a
 native rebuild, and mark anything you could not verify as `UNVERIFIED:` rather than asserting it.
 
-# Never invent an identifier
+# Cite it or mark it TBD — no uncited specifics
 
-Bundle ids, App Group ids, Apple Team ids, App Store Connect ids, project ids: **read them from
-the repo or leave an ALL-CAPS placeholder.** A wrong identifier produces a provisioning failure at
-build time or a silent SSO failure at runtime, and both are slow to diagnose. The verified values
-live in `app.config.ts`, `app.json`, and `eas.json`.
+**Every concrete value carries a source, or it is an ALL-CAPS placeholder.** Identifiers, version
+numbers, counts, colors, durations, API names, prices, dates: each one is followed by a
+`file.ts:123` citation, a URL, or an explicit `UNVERIFIED:` marker. **An uncited specific is a
+defect**, even when it turns out to be right.
+
+This is not pedantry, it is the only defence that works. Two separate agents writing these
+documents fabricated a bundle identifier — the second did it *inside a section it had titled
+"read them, never invent them."* That is not disobedience: a model has no internal signal
+separating "I read this" from "I inferred this", so both produce equally confident text and an
+instruction not to invent cannot reliably prevent inventing. What does work is making the claim
+checkable, because **a fabricated value has no citation** — the format itself exposes it. In the
+audit of these documents, every cited claim held; the one fabrication was in uncited prose.
+
+Bundle ids, App Group ids, Apple Team ids, ASC ids: **read them from the repo or leave a
+placeholder.** A wrong identifier produces a provisioning failure at build time or a silent SSO
+failure at runtime, and both are slow to diagnose. Verified values live in `app.config.ts`,
+`app.json`, and `eas.json`.
+
+Never guess a Lucide icon name (`ls node_modules/lucide-react-native/dist/types/icons | grep -i x`)
+and never write an Expo API from memory (read https://docs.expo.dev/versions/v57.0.0/).
+
+Run the mechanical half of this with:
+
+```bash
+bun run audit:plan     # citations resolve, icon names exist, KJV counts match
+```
+
+It verifies what is cheap to verify and says so plainly. **A clean run is not proof the documents
+are correct** — prose, judgement, and anything about Expo's docs still need a reader.
 
 # Engineering invariants
 

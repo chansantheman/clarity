@@ -21,10 +21,21 @@ Things I checked myself, because several of them change the design:
 | `KJV_verses` rows | 31,102 | `select count(*)` |
 | `KJV_books` rows | 66 | `select count(*)` |
 | Distinct chapters | **1,189** | `select count(*) from (select distinct book_id,chapter from KJV_verses)` |
-| Total words (whitespace count) | **791,184** | `sum(length(text)-length(replace(text,' ',''))+1)` |
+| Total words (**spaces+1 method**) | **791,184** | `sum(length(text)-length(replace(text,' ',''))+1)` |
 | Mean words/chapter | ~665 | derived |
 | Largest chapter | Psalm 119 — 176 verses, 2,446 words | grouped query |
 | Smallest chapter | Psalm 117 — 2 verses, 34 words | grouped query |
+
+> **Audit note (coordinator).** Every figure in this table was independently re-measured and
+> reproduces exactly. But the word counts use the **spaces+1** method above, which counts one word
+> per space plus one per verse — it therefore runs slightly high, and it does **not** match Lane B
+> (`03-product-ux.md`), which whitespace-splits and reports 789,814 total, Psalm 119 = 2,423, and
+> Psalm 117 = 33. Both are correct under their own definition and neither is wrong; they are
+> counting different things. **For anything user-facing, use Lane B's whitespace-split numbers** —
+> they match what `lib/passage-text.ts` tokenizes and therefore what `currentWordIndex` counts,
+> which is what the duration estimates and the progress hairline depend on. Reference values for
+> re-verification: spaces+1 = 791,184 · whitespace split = 789,814 · regex `[A-Za-z][A-Za-z'-]*` =
+> 792,364.
 | `page_size` / `encoding` / `journal_mode` | 4096 / UTF-8 / `delete` | `pragma` |
 | Query plan for a chapter read, **as shipped** | `SCAN KJV_verses` + `USE TEMP B-TREE FOR ORDER BY` | `explain query plan` |
 | Query plan **after** `CREATE INDEX ... (book_id, chapter, verse)` | `SEARCH KJV_verses USING INDEX` | `explain query plan` |

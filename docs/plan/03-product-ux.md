@@ -23,7 +23,7 @@ several design decisions below only make sense in light of the real distribution
 | measure | value |
 |---|---|
 | chapters | **1,189** |
-| total words | **789,814** |
+| total words (**whitespace split**) | **789,814** |
 | words per chapter — min / median / max | 33 / 627 / 2,423 |
 | minutes per chapter at 130 wpm — min / median / max | **0.3 / 4.8 / 18.6** |
 | chapters that round to ≤ 1 minute | 68 |
@@ -36,6 +36,16 @@ several design decisions below only make sense in light of the real distribution
 
 Two consequences drive §4 and §5: a "chapter" is not a uniform unit of work (15 seconds to
 19 minutes), and there are 1,649 words in the Bible you can only find by reading it.
+
+> **Audit note (coordinator).** Every number in this table was independently re-measured and
+> reproduces **exactly** — 3,804 capitalized tokens, 1,649 appearing once, 12,456 lowercase types,
+> 958 `-eth`/`-est` forms, and 68 chapters that round to ≤1 minute. Two clarifications:
+> word counts here use a **whitespace split**, so they differ slightly from Lane A
+> (`02-data-architecture.md`), which uses a spaces+1 SQL method and reports 791,184 / 2,446 / 34.
+> **These numbers are the ones to use for anything user-facing**, because they match what
+> `lib/passage-text.ts` actually tokenizes. Second, "68 chapters ≤1 min" means *rounds to* one
+> minute (≤195 words); the count of chapters under a literal 130-word minute is **32**. Both are
+> true; the table's wording is the accurate one.
 
 **Target WPM for scripture: 130.** That is `calm-narration`'s `targetWpm` in
 `constants/passages.ts` — not `epic-speech`'s 179. KJV is archaic prose; 130 is the honest
