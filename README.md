@@ -81,6 +81,32 @@ constants/     Passages, drills, topics, colors, fonts, metrics vocabulary
 `lib/` and `constants/` stay pure. They never import from `services/`, so the
 scoring math runs under bun in the test scripts.
 
+## Working with AI agents
+
+Project instructions live in [AGENTS.md](AGENTS.md) (imported by `CLAUDE.md`). Read it before
+changing anything — it carries the invariants that are not obvious from the code, plus the
+Expo SDK 57, typography, icon, and liquid-glass rules.
+
+Two tools are set up so agents verify Expo behaviour instead of recalling it. To reproduce on a
+new machine:
+
+```bash
+# Official Expo skills + the Expo MCP server (docs + EAS access).
+# Already enabled for this repo via .claude/settings.json.
+claude plugin install expo@claude-plugins-official
+
+# Drive a running build: accessibility tree, taps, logs, screenshots, profiling.
+npm install -g agent-device@latest
+agent-device doctor
+npx skills add callstack/agent-device   # optional: teaches agents the command surface
+```
+
+`agent-device doctor` is the first thing to run when something looks wrong — it reports device
+inventory, Metro reachability, and missing platform tooling. Android needs `adb` on your PATH.
+
+See [AGENTS.md](AGENTS.md) for the command surface and what can and cannot be verified on a
+simulator.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
