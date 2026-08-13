@@ -1300,9 +1300,7 @@ one hour of a lawyer's time.
 
 ## 4.10 Monetization
 
-**Decision (kept from the draft — the shape is right): freemium via RevenueCat.** `react-native-purchases@10.7.0`
-and `react-native-purchases-ui@10.7.0` are already installed, so the integration cost is mostly
-configuration.
+**Decision (updated by owner): The app is entirely free.** No RevenueCat, no paid tiers, and no freemium gating. Instead of paying, users can unlock special themes, fonts, colors, and layout schemes by sharing the app with friends, reinforcing the group commission to share the Bible.
 
 Revised free/paid split, adjusted for §4.9's licensing findings and for the fact that the existing
 app's pronunciation engine is the genuinely expensive asset:

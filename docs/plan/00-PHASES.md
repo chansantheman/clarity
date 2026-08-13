@@ -191,11 +191,8 @@ Fixed local time, not a rolling 24h offset (which walks the reminder into the mi
 night). Content is a *find*, not a verse: *"Numbers 13 has 4 words that appear nowhere else in
 the Bible."* Never "here's your daily verse" — the pattern the owner named as the thing to avoid.
 
-**Phase 14 — Monetization and Holy Scroll.** *(Lane C §4.10, §4.11)*
-Free: the launch translation and the **entire** Lexicon. Paid: additional translations (license-audited
-first), side-by-side compare, audio export. **Do not paywall progress, badges, or discovery** —
-the collection is the retention engine, and gating it converts the one thing people would tell
-their friends about into a reason not to. Holy Scroll interlinks via a shared Supabase account
+**Phase 14 — Unlocks and Holy Scroll.** *(Lane C §4.10, §4.11)*
+The app is entirely free (no RevenueCat, no paid tiers). Special themes, fonts, colors, and layouts are unlockable through a "share with a friend" gimmick to encourage group commission and sharing the Bible. Holy Scroll interlinks via a shared Supabase account
 (Tier 1); the App Group / local SSO path (Tier 2) requires both apps on team `R23HRQJN98` and two
 identifiers nobody has supplied yet.
 
