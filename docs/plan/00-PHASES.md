@@ -9,6 +9,8 @@ file to know *what order to build in and why*; read the lane docs for the actual
 | [`02-data-architecture.md`](./02-data-architecture.md) | A | Data packaging, content layer, progress persistence, session seam, routes |
 | [`03-product-ux.md`](./03-product-ux.md) | B | Bible tab, home, live reading screen, completion moments, gamification |
 | [`04-backend-shipping.md`](./04-backend-shipping.md) | C | Auth, sync, Supabase, notifications, licensing, git, App Store |
+| [`05-android.md`](./05-android.md) | — | Android: what ports, how to diverge, per-phase delta, Play Store |
+| [`06-design-philosophy.md`](./06-design-philosophy.md) | — | **How it should feel.** Motion tiers, haptic vocabulary, gamification ethics |
 
 **The one rule that governs everything: this is additive.** Practice, Drills, Freestyle,
 Analytics, the pronunciation engine, and the entire design language stay. Exactly one existing
@@ -223,7 +225,9 @@ Phase 4 must not overlap with any other edit to `app/session/[passageId].tsx`.
 ## 3. Design language — the invariants
 
 Lifted from the code, not invented. These are what make a new screen indistinguishable from an
-old one.
+old one. **How things should *feel* — motion tiers, haptic meanings, the ethics of the
+gamification — is [`06-design-philosophy.md`](./06-design-philosophy.md), and it is binding on
+every new surface in this plan.**
 
 - **Type: SF Pro Rounded, always, via `fontFamily`** from `constants/fonts.ts`. **Never
   `fontWeight`** — iOS synthesizes or falls back to the system font.
@@ -268,7 +272,175 @@ old one.
   repo or leave an ALL-CAPS placeholder. Both worker passes on Lane C violated this and both were
   caught; the second one did it inside a section titled "read them, never invent them."
 
-## 5. Working in git, one phase at a time
+## 5. How a phase gets verified
+
+Every phase above ends in a "done when." This is how you actually establish it, rather than
+reading the diff and hoping. Two tools are installed for exactly this.
+
+**For anything Expo: use the Expo skills and MCP server, not memory.** The `expo` plugin
+(v1.9.8) ships 21 auto-loading skills; `expo-router`, `expo-dev-client`, `expo-upgrade`,
+`eas-workflows`, `eas-app-stores`, and `eas-observe` are the ones this plan touches. The Expo
+**MCP server** (`https://mcp.expo.dev/mcp`) gives live documentation and EAS access. SDK 57 is
+recent enough that model training is stale on it — that is the whole reason these exist.
+
+**For anything visual or behavioural: use `agent-device`.** It drives a real running build —
+accessibility tree, taps, scrolling, deep links, logs, network, screenshots. Reading code tells
+you a screen *should* render; agent-device tells you it *did*. The `agent-device` and
+`ios-simulator` skills are installed and load automatically.
+
+```bash
+agent-device doctor                      # run first; reports devices, Metro, missing tooling
+agent-device open <AppName> --platform ios
+agent-device snapshot -i                 # accessibility tree with @ids — snapshot before acting
+agent-device press @e2 --settle
+agent-device screenshot ./artifacts/phase-7-bible-tab.png
+```
+
+### What each phase should be verified with
+
+| Phase | Verify with |
+|---|---|
+| 0 — Hygiene | Grep the built bundle for the Azure key. `agent-device` a real session to confirm pronunciation still works through the server route. |
+| 1 — Database | `bun scripts/prepare-bible-db.ts` assertions; `explain query plan` on the **on-device** copy; confirm the second launch skips the copy via `agent-device logs`. |
+| 2 — Pure modules | `bun scripts/test-bible.ts`. No device needed — that is the point of the purity rule. |
+| 3 — Schema safety | `bun scripts/test-history.ts` with the two new read-only/`bad-mode` cases. |
+| 4 — `ReadingSession` extraction | **Read the diff first** — it must be a move, not a rewrite. Then run one full session of each kind on a **real device** and compare behaviour. |
+| 5 — Progress store | Seed a chapter, restart the app, confirm it survived. `agent-device` for the restart. |
+| 6 — Session route | **Device-only.** The verse reference advancing, the ribbon reacting to speech, auto-advance firing — none of it is meaningful on a simulator. |
+| 7 — Bible tab | `agent-device snapshot -i` on a **375pt device** for the four-tab overflow risk; screenshot the three chapter states. |
+| 8 — Home + Settings | Change the daily goal, confirm the ring and percent move immediately. `bun scripts/test-stats.ts` proves `lib/stats.ts` stayed pure. |
+| 9 — Completion moments | Screenshot the sheet; confirm it sits ≤360pt and shows zero performance metrics. |
+| 10 — Lexicon | **Device-only.** Read Genesis 10 aloud, confirm chips fire for the right words and for nothing else, and that re-reading fires no duplicates. |
+| 11 — Badges / drills | `agent-device` the badge grid; confirm every unearned badge shows its criterion. |
+| 12–14 — Backend | Adversarial RLS check (sign in as A, read B's rows, expect zero). Two-device offline convergence. Sandbox purchase + restore. |
+| 15 — Ship | Xcode Privacy Report; TestFlight; the review-notes demo account. |
+
+### The two constraints that make simulator passes lie
+
+1. **This app cannot run in Expo Go** — `react-native-mmkv`, `react-native-nitro-modules`,
+   `expo-speech-recognition`, `react-native-purchases`, and the custom
+   `plugins/with-scene-delegate.js` plugin do not exist there. Always target a development build.
+2. **Speech recognition cannot be meaningfully exercised on a simulator.** Anything touching live
+   recognition — Phases 6, 10, and the completion rule in every phase — is **device-only**.
+   `EXPO_PUBLIC_MOCK_PRACTICE=1` runs the UI against a fake engine, which is useful for layout
+   and useless for verifying the engine.
+
+**Say which one you did.** "Verified on device", "verified on simulator", or "not verified" are
+three different claims. A simulator pass reported as a pass is the failure mode this section
+exists to prevent.
+
+Also: `/ios` and `/android` are gitignored, so a fresh clone needs `npx expo prebuild` before
+agent-device has anything to open.
+
+---
+
+## 6. Android — what actually crosses over
+
+Expo genuinely does the heavy lifting: one codebase, both platforms, and this project is already
+wired for Android (adaptive icons with a monochrome layer, `RECORD_AUDIO` and foreground-service
+permissions, an `android.package`). But "same code" is not "same app," and three things in this
+repo do not cross over cleanly. None is a blocker; all three need a decision.
+
+### Everything in this plan is platform-agnostic
+
+The whole Bible layer — SQLite packaging, `lib/bible/*`, the coverage bitmaps, rollups, the
+session seam, the progress store — is plain TypeScript over `expo-sqlite` and MMKV, both of which
+ship Android. **Zero Android-specific work in Phases 1–5, 9–11.** `expo-speech-recognition` has an
+`android/` directory too, so the core loop is real on both.
+
+### 1. Liquid Glass does not exist on Android — and it is the design language
+
+`expo-glass-effect` has **no `android/` directory at all**. On Android, `GlassView` is literally
+`<View {...props} />` and `isLiquidGlassAvailable()` returns `false`. **24 component files use it.**
+
+The good news is that this app was built correctly: every one of those files already branches on
+`isLiquidGlassAvailable()` and falls back to a `solidFallback` color (`rgba(244,244,246,0.96)` /
+`rgba(26,26,30,0.96)`). Android renders solid cards instead of glass. It works and it does not
+crash — but the material, the depth, and the interactive press response are gone, and those are
+most of what makes this app look like it does.
+
+Also iOS-gated by hand: the carousel's off-center depth blur (`passage-carousel.tsx:269`) and the
+tab-bar haptics (`glass-tab-bar.tsx:143`).
+
+**Decision to make:** ship Android with the flat fallback and accept it is a visually lesser
+version, or design a deliberate Android material (elevation, Material 3 surfaces) rather than
+letting it default to "iOS with the good parts removed." Do not discover this at submission time.
+
+### 2. SF Pro Rounded cannot ship in an Android build
+
+This is the landmine. The five `.otf` faces in `assets/fonts/` are bundled and loaded through
+`expo-font`, so they will *render* on Android — but **Apple's SF font license permits use only on
+Apple platforms.** Shipping SF Pro Rounded inside an APK/AAB is a license violation, and it is the
+kind that is trivial to detect because the font files are right there in the bundle.
+
+`UNVERIFIED:` the current exact wording of Apple's SF font EULA — read it before deciding, since
+it has been revised. But plan for needing a substitute: **Nunito** and **Quicksand** are the
+closest free rounded faces, and both are on Google Fonts with open licenses. That means a
+platform-conditional font map in `constants/fonts.ts` — the one file the whole type system already
+routes through, so the change is contained.
+
+### 3. Auth — settled
+
+**The owner has decided: Google *and* Apple sign-in on both platforms.** That removes auth as a
+divergence question. Sign in with Apple runs through the web flow on Android; Google is native on
+Android and web-based on iOS; Supabase supports both, so Lane C's schema is unchanged. It also
+means App Store Guideline 4.8 is genuinely triggered (the app offers a third-party login), and
+offering Apple alongside it satisfies exactly that. Watch one launch-day trap: Android requires the
+**release keystore's SHA-1** registered with Google, so Google sign-in can work in debug and fail
+in release.
+
+### 4. The hardware back button is a live bug
+
+There is **no `BackHandler` or `beforeRemove` anywhere in the app**. On Android, back unmounts the
+session route, whose cleanup calls `cancel()` — not `stop()` — so **no record is written and the
+minutes are lost**. That is the exact bug `handleDismiss`'s comment says was already fixed once for
+the button path. Worse here: verse coverage is banked incrementally, so coverage would survive
+while the record vanishes, producing "100% read, 0 sessions." **Fix it in Phase 4**, inside the
+extracted `ReadingSession`, so both routes inherit one exit path — worth doing whether or not
+Android ever ships.
+
+### Harmless iOS-only pieces
+
+`plugins/with-scene-delegate.js` (UIKit scene lifecycle for iOS 27), `appleTeamId`, and the Icon
+Composer icons simply do not apply on Android — they are not compatibility problems.
+`components/animated-rounded-number.ios.tsx` has a non-`.ios` sibling, so Android gets a working
+fallback for the rolling digits; only the SwiftUI `numericText` transition is lost.
+
+### Your Android setup, concretely
+
+The SDK is installed at `~/Library/Android/sdk`, but **`adb` is not on your PATH** — which is
+exactly why `agent-device doctor` reports Android inventory as unavailable and why the
+`android-emulator` skill is currently inert. And **no AVDs exist yet**, so there is no emulator to
+boot.
+
+```bash
+# add to ~/.zshrc
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
+
+# then create an AVD in Android Studio (Device Manager → Add), and:
+adb devices
+agent-device doctor          # Android inventory should now resolve
+bunx expo run:android
+```
+
+An emulator is fine for layout, navigation, and the glass fallback. It is **not** fine for speech
+recognition — same rule as the iOS simulator. Since you have no Android device, treat Android
+speech as unverified until you get one.
+
+### Recommendation
+
+**Ship iOS first — but fix the back button in Phase 4 and keep the font swap ready.** Nothing in
+Phases 0–11 blocks Android later: the logic is portable and the glass fallbacks already exist. The
+two genuinely Android-shaped decisions (the font substitute, and whether Android gets a designed
+material or the flat fallback) are better made once you know whether anyone is on Android.
+
+**Full detail — dependency audit, the divergence techniques, Android platform behaviours, a
+per-phase delta table, and machine setup — is in [`05-android.md`](./05-android.md).**
+
+---
+
+## 7. Working in git, one phase at a time
 
 Full beginner-safe guide in [`04-backend-shipping.md` §4.14](./04-backend-shipping.md) — including
 what `git status` is telling you, why `git add .` is a bad habit when `.env.local` is in the repo,
@@ -291,7 +463,7 @@ split it at a "done when" boundary.
 
 ---
 
-## 6. Still open — owner decisions
+## 8. Still open — owner decisions
 
 Nobody should guess these.
 
@@ -303,3 +475,10 @@ Nobody should guess these.
    want Tier 2 Holy Scroll SSO. Requires both apps on team `R23HRQJN98`.
 4. **Are there real users on the current bundle id in production?** Decides whether a bundle-id
    change needs a migration story or can be a clean break.
+5. **Does Android ship at all, and when?** §6 recommends iOS-first. If it ships, two sub-decisions
+   follow: a replacement for SF Pro Rounded (a license requirement, not a preference — Nunito is
+   the recommendation), and whether Android gets a designed material or the flat glass fallback.
+   Auth is no longer one of these — Google + Apple on both platforms is settled.
+6. **`minSdkVersion` 33 (Android 13)?** Recommended, because audio recording and continuous
+   recognition — the core loop — are unavailable below it. Supporting Android 12 means shipping a
+   build where reading a chapter doesn't properly work.
