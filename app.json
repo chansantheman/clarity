@@ -11,12 +11,9 @@
       "supportsTablet": true,
       "icon": "./assets/app.icon",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition to follow along as you read.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone so it can hear you read.",
-        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) does not access your photos. This permission is referenced by a system framework used for file handling, and your photo library is never read without your consent.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.schroedernathan.clarity"
+      "bundleIdentifier": "com.DiscipleshipTech.SpeakTheBible"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,14 +29,19 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
-      "package": "com.schroedernathan.clarity"
+      "package": "com.DiscipleshipTech.SpeakTheBible"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "output": "server"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "origin": "https://exponathan-clarity.expo.app"
+        }
+      ],
       [
         "expo-font",
         {
@@ -66,9 +68,6 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {
-        "origin": "https://exponathan-clarity.expo.app"
-      },
       "eas": {
         "projectId": "654f9e52-e892-44e4-a4b8-9aa700fef15b"
       }

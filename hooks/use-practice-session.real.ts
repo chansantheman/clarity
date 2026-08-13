@@ -589,28 +589,24 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       longestPauseMs: pauses.longestPauseMs,
     };
 
-    const key = process.env.EXPO_PUBLIC_AZURE_SPEECH_KEY;
-    const region = process.env.EXPO_PUBLIC_AZURE_SPEECH_REGION;
-    if (key && region) {
-      try {
-        const chunks = buildChunks(
-          tokenized,
-          aligner.timeline,
-          segmentDurations,
-          m.segmentActiveStartMs,
-        ).filter((c) => segmentBytes[c.segmentIndex] != null);
-        if (chunks.length > 0) {
-          const wavChunks = chunks.map((c) => ({
-            wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs),
-            referenceText: c.referenceText,
-          }));
-          const assessments = await assessSession(wavChunks, { key, region });
-          const azure = buildAzureResult({ ...base, chunks, assessments });
-          if (azure) return azure;
-        }
-      } catch (e) {
-        if (__DEV__) console.warn('[practice] Azure assessment failed:', e);
+    try {
+      const chunks = buildChunks(
+        tokenized,
+        aligner.timeline,
+        segmentDurations,
+        m.segmentActiveStartMs,
+      ).filter((c) => segmentBytes[c.segmentIndex] != null);
+      if (chunks.length > 0) {
+        const wavChunks = chunks.map((c) => ({
+          wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs),
+          referenceText: c.referenceText,
+        }));
+        const assessments = await assessSession(wavChunks);
+        const azure = buildAzureResult({ ...base, chunks, assessments });
+        if (azure) return azure;
       }
+    } catch (e) {
+      if (__DEV__) console.warn('[practice] Azure assessment failed:', e);
     }
 
     return buildLiveFallbackResult(base);

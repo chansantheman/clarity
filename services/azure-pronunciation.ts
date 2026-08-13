@@ -1,23 +1,17 @@
 /**
- * Azure Speech Pronunciation Assessment over the short-audio REST endpoint.
+ * Azure Speech Pronunciation Assessment through the server-side API route.
  *
  * Each chunk POSTs raw WAV bytes (16kHz/16-bit/mono PCM — exactly what the
  * recognition recorder persists) with the assessment params in the
- * base64-encoded `Pronunciation-Assessment` header. The short-audio endpoint
- * caps audio at 30s, so callers chunk to <=28s (services/scoring.ts).
+ * base64-encoded reference-text header. The server constructs Azure's
+ * `Pronunciation-Assessment` header with its private credentials. The short-audio
+ * endpoint caps audio at 30s, so callers chunk to <=28s (services/scoring.ts).
  *
  * Any failure (network, non-2xx, NoMatch, malformed JSON) resolves to `null`
  * for that chunk — the engine NEVER dead-ends on Azure.
  */
 
 import { fetch } from 'expo/fetch';
-
-export type AzureSpeechConfig = {
-  key: string;
-  region: string;
-  /** BCP-47, default en-US. */
-  locale?: string;
-};
 
 export type AzureErrorType = 'None' | 'Omission' | 'Insertion' | 'Mispronunciation';
 
@@ -38,6 +32,7 @@ export type ChunkAssessment = {
 };
 
 const REQUEST_TIMEOUT_MS = 30_000;
+const PRONUNCIATION_ASSESSMENT_PATH = '/api/pronunciation-assessment';
 
 /** UTF-8 → base64, dependency-free (Hermes lacks Buffer; btoa chokes on non-Latin-1). */
 export function utf8ToBase64(input: string): string {
@@ -124,51 +119,36 @@ export function parseAssessmentResponse(json: unknown): ChunkAssessment | null {
 }
 
 /**
- * Assess one <=30s WAV chunk against its reference text.
+ * Assess one <=30s WAV chunk against its reference text through the app server.
  * Resolves `null` on any failure or NoMatch.
  */
 export async function assessChunk(
   wavBytes: Uint8Array,
   referenceText: string,
-  config: AzureSpeechConfig,
 ): Promise<ChunkAssessment | null> {
-  const locale = config.locale ?? 'en-US';
-  const url = `https://${config.region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${encodeURIComponent(locale)}&format=detailed`;
-  const assessmentParams = utf8ToBase64(
-    JSON.stringify({
-      ReferenceText: referenceText,
-      GradingSystem: 'HundredMark',
-      Granularity: 'Word',
-      Dimension: 'Comprehensive',
-      EnableMiscue: 'True',
-      EnableProsodyAssessment: 'True',
-    }),
-  );
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   // Copy into a fresh ArrayBuffer-backed view so the body satisfies BodyInit
   // regardless of the source buffer's typing (ArrayBufferLike).
   const body: Uint8Array<ArrayBuffer> = new Uint8Array(wavBytes);
   try {
-    const response = await fetch(url, {
+    const response = await fetch(PRONUNCIATION_ASSESSMENT_PATH, {
       method: 'POST',
       headers: {
-        'Ocp-Apim-Subscription-Key': config.key,
         'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000',
-        'Pronunciation-Assessment': assessmentParams,
+        'X-Pronunciation-Reference': utf8ToBase64(referenceText),
         Accept: 'application/json',
       },
       body,
       signal: controller.signal,
     });
     if (!response.ok) {
-      if (__DEV__) console.warn(`[azure] chunk failed: HTTP ${response.status}`);
+      if (__DEV__) console.warn(`[azure] assessment route failed: HTTP ${response.status}`);
       return null;
     }
     return parseAssessmentResponse(await response.json());
   } catch (error) {
-    if (__DEV__) console.warn('[azure] chunk failed:', error);
+    if (__DEV__) console.warn('[azure] assessment route failed:', error);
     return null;
   } finally {
     clearTimeout(timeout);
@@ -181,11 +161,10 @@ export async function assessChunk(
  */
 export async function assessSession(
   chunks: { wavBytes: Uint8Array; referenceText: string }[],
-  config: AzureSpeechConfig,
 ): Promise<(ChunkAssessment | null)[]> {
   const results: (ChunkAssessment | null)[] = [];
   for (const chunk of chunks) {
-    results.push(await assessChunk(chunk.wavBytes, chunk.referenceText, config));
+    results.push(await assessChunk(chunk.wavBytes, chunk.referenceText));
   }
   return results;
 }

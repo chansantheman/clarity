@@ -6,7 +6,7 @@ import withSceneDelegate from './plugins/with-scene-delegate';
 // variant, so `development`, `preview`, and `production` builds install side by
 // side. The variant comes from APP_VARIANT, stored in the EAS environments and
 // pulled locally into .env.local by `eas env:pull`.
-const BUNDLE_ID = 'com.schroedernathan.clarity';
+const BUNDLE_ID = 'com.DiscipleshipTech.SpeakTheBible';
 
 function getBundleId() {
   switch (process.env.APP_VARIANT) {
