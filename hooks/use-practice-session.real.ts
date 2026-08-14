@@ -242,8 +242,11 @@ export function usePracticeSession(passage: Passage): PracticeSession {
   const fail = (code: PracticeErrorCode, message: string) => {
     const m = machineRef.current!;
     if (m.status === 'done') return;
+    if (m.listeningSinceWall != null) {
+      m.accumulatedActiveMs += Date.now() - m.listeningSinceWall;
+      m.listeningSinceWall = null;
+    }
     m.expectEnd = true;
-    m.listeningSinceWall = null;
     m.speechActive = false;
     cancelAnimation(currentWordFraction);
     currentWordFraction.value = 0;
@@ -293,6 +296,8 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     m.sessionId = makeSessionId();
     m.retriedNetwork = false;
     m.stopping = false;
+    m.startedCount = 0;
+    m.endedCount = 0;
     m.recSession = -1;
     m.segmentUris = [];
     m.segmentActiveStartMs = [];

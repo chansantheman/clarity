@@ -11,7 +11,8 @@ export type PassageCategory =
   | 'twisters'
   | 'drill'
   | 'bible'
-  | 'custom';
+  | 'custom'
+  | 'bible';
 
 /** A practice passage: home-card metadata plus the reading content. */
 export type Passage = {

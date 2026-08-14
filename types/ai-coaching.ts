@@ -1,6 +1,6 @@
 export type SpeechCoachStats = {
-  /** 'passage' | 'drill' read against a reference text; 'freestyle' impromptu. */
-  mode: 'passage' | 'drill' | 'freestyle';
+  /** Practice mode; scripture sessions are not sent to the coaching route. */
+  mode: 'passage' | 'drill' | 'freestyle' | 'scripture';
   /** Freestyle only: the recognized transcript, capped for the prompt. */
   transcriptExcerpt?: string;
   overallScore: number;

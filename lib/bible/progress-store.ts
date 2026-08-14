@@ -1,7 +1,15 @@
 import type { KvBackend } from '../history-store';
 import { KEY } from '../history-schema';
 import type { BibleRef } from './ref';
-import { chapterKey, parseChapterKey, parseChapterProgress, withFurthest, withVerseRead, type ChapterProgress } from './progress-schema';
+import {
+  chapterKey,
+  parseChapterKey,
+  parseChapterProgress,
+  versesRead,
+  withFurthest,
+  withVerseRead,
+  type ChapterProgress,
+} from './progress-schema';
 import type { TranslationCode } from './canon';
 
 export type BibleProgressStoreDeps = {
@@ -21,27 +29,43 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
   const scheduleDeferred = deps.scheduleDeferred ?? ((fn) => setTimeout(fn, 0));
 
   let progressMap: ReadonlyMap<string, ChapterProgress> | null = null;
+  const readOnlyKeys = new Set<string>();
   const listeners = new Set<() => void>();
 
   function notify() {
     for (const listener of listeners) listener();
   }
 
+  function removeVerified(key: string): boolean {
+    try {
+      kv.remove(key);
+      if (kv.contains(key)) throw new Error('remove verify failed');
+      return true;
+    } catch (error) {
+      warn(`[bible-progress] failed to remove ${key}`, error);
+      return false;
+    }
+  }
+
   function quarantine(key: string, raw: string, reason: string) {
+    // A deferred repair must never quarantine a newer value written after the
+    // scan. If the key changed, leave it alone for the next hydration pass.
+    if (kv.getString(key) !== raw) return;
+
     const at = now();
     const qKey = `${KEY.quarantine}${at.toString().padStart(16, '0')}/${key.slice(-24)}`;
     const payload = JSON.stringify({ at, key, reason, raw: raw.slice(0, 4096) });
     try {
       kv.set(qKey, payload);
       if (kv.getString(qKey) !== payload) throw new Error('quarantine verify failed');
-      kv.remove(key);
+      if (!removeVerified(key)) return;
     } catch (error) {
       warn(`[bible-progress] could not quarantine ${key}, leaving it in place`, error);
       return;
     }
     const keys = kv.getAllKeys().filter((k) => k.startsWith(KEY.quarantine)).sort();
     for (const stale of keys.slice(0, Math.max(0, keys.length - MAX_QUARANTINE))) {
-      kv.remove(stale);
+      removeVerified(stale);
     }
   }
 
@@ -69,9 +93,7 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
         continue;
       }
 
-      const maxVerses = verseCountOf(ref);
-      const parsed = parseChapterProgress(json, maxVerses);
-      
+      const parsed = parseChapterProgress(json, verseCountOf(ref));
       if (!parsed.ok) {
         deferred.push(() => quarantine(key, raw, parsed.reason));
         continue;
@@ -79,12 +101,12 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
 
       const progress = parsed.value;
       map.set(key, progress);
+      if (parsed.readOnly) readOnlyKeys.add(key);
 
       if (!parsed.readOnly && parsed.upgraded) {
         deferred.push(() => {
-          if (writeProgress(key, progress)) {
-            // Already written
-          }
+          // Do not overwrite a verse boundary committed after hydration.
+          writeProgress(key, progress, raw);
         });
       }
     }
@@ -107,7 +129,14 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
     return progressMap;
   }
 
-  function writeProgress(key: string, p: ChapterProgress): boolean {
+  /**
+   * Write and verify without destroying a previously valid value on failure.
+   * `expectedRaw` is used by deferred repairs to avoid racing a newer write.
+   */
+  function writeProgress(key: string, p: ChapterProgress, expectedRaw?: string): boolean {
+    const previous = kv.getString(key);
+    if (expectedRaw !== undefined && previous !== expectedRaw) return false;
+
     const json = JSON.stringify(p);
     try {
       kv.set(key, json);
@@ -116,9 +145,14 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
     } catch (error) {
       warn(`[bible-progress] failed to persist ${key}`, error);
       try {
-        kv.remove(key);
-      } catch {
-        // ignore
+        if (previous === undefined) {
+          kv.remove(key);
+        } else {
+          kv.set(key, previous);
+          if (kv.getString(key) !== previous) throw new Error('restore verify failed');
+        }
+      } catch (restoreError) {
+        warn(`[bible-progress] failed to restore ${key}`, restoreError);
       }
       return false;
     }
@@ -127,12 +161,17 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
   function update(ref: BibleRef, updater: (p: ChapterProgress) => ChapterProgress): boolean {
     hydrate();
     const key = chapterKey(ref);
+    if (readOnlyKeys.has(key)) {
+      warn(`[bible-progress] refusing to mutate read-only future schema ${key}`);
+      return false;
+    }
+
     const existing = progressMap!.get(key);
     const current = existing ?? { v: 1, f: 0, r: '' };
     const next = updater(current);
-    
+
     if (existing && existing.v === next.v && existing.f === next.f && existing.r === next.r) {
-      return false; // unchanged
+      return false;
     }
 
     if (writeProgress(key, next)) {
@@ -143,6 +182,11 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
       return true;
     }
     return false;
+  }
+
+  function validVerse(ref: BibleRef, verse: number): boolean {
+    const count = verseCountOf(ref);
+    return Number.isSafeInteger(verse) && verse >= 1 && verse <= count;
   }
 
   return {
@@ -157,17 +201,19 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
       return hydrate().get(chapterKey(ref));
     },
     markVerseRead(ref: BibleRef, verse: number): boolean {
+      if (!validVerse(ref, verse)) return false;
       return update(ref, (p) => withVerseRead(p, verse));
     },
     markFurthest(ref: BibleRef, verse: number): boolean {
+      if (!validVerse(ref, verse)) return false;
       return update(ref, (p) => withFurthest(p, verse));
     },
     clearTranslation(code: TranslationCode): void {
       const prefix = `${KEY.bibleChapter}${code}/`;
       let changed = false;
       for (const key of kv.getAllKeys()) {
-        if (key.startsWith(prefix)) {
-          kv.remove(key);
+        if (key.startsWith(prefix) && removeVerified(key)) {
+          readOnlyKeys.delete(key);
           changed = true;
         }
       }
@@ -179,8 +225,8 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
     clearAll(): void {
       let changed = false;
       for (const key of kv.getAllKeys()) {
-        if (key.startsWith(KEY.bibleChapter)) {
-          kv.remove(key);
+        if (key.startsWith(KEY.bibleChapter) && removeVerified(key)) {
+          readOnlyKeys.delete(key);
           changed = true;
         }
       }
@@ -192,17 +238,7 @@ export function createBibleProgressStore(deps: BibleProgressStoreDeps) {
     getStats() {
       const map = hydrate();
       let versesReadCount = 0;
-      for (const p of map.values()) {
-        let count = 0;
-        for (let i = 0; i < p.r.length; i += 2) {
-          let byte = parseInt(p.r.substring(i, i + 2), 16);
-          while (byte > 0) {
-            if (byte & 1) count++;
-            byte >>= 1;
-          }
-        }
-        versesReadCount += count;
-      }
+      for (const p of map.values()) versesReadCount += versesRead(p);
       return {
         chapters: map.size,
         versesRead: versesReadCount,

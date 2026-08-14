@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
-import { AudioLines, ChartColumn, Home } from 'lucide-react-native';
+import { AudioLines, BookOpen, ChartColumn, Home } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ const ITEMS: (GlassTabItem & { href: string })[] = [
   { name: 'index', href: '/', label: 'Home', icon: Home },
   { name: 'practice', href: '/practice', label: 'Practice', icon: AudioLines },
   { name: 'analytics', href: '/analytics', label: 'Analytics', icon: ChartColumn },
+  { name: 'bible', href: '/bible', label: 'Bible', icon: BookOpen },
 ];
 
 /** Progressive blur over the status bar: strongest at the device's top edge,

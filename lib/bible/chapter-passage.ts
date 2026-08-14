@@ -1,20 +1,21 @@
 import { tokenizePassage } from '../passage-text';
 import type { Passage } from '@/types/session';
 import { chapterPassageId, formatChapterRef, formatVerseRef, type BibleRef } from './ref';
-import { estimateMinutes } from './chapter-stats.generated';
-
-export const SCRIPTURE_TARGET_WPM = 135;
+export const SCRIPTURE_TARGET_WPM = 130;
+export const VERSE_BANK_RATIO = 0.98;
 
 export type VerseRow = { verse: number; text: string };
+export type VerseSpan = { verse: number; wordStart: number; wordEnd: number };
 
 export type ChapterPassage = {
   passage: Passage;
-  verses: readonly { verse: number; wordStart: number; wordEnd: number }[];
+  verses: readonly VerseSpan[];
 };
 
-function formatDuration(minutes: number): string {
-  if (minutes < 1) return '< 1 min';
-  return `~${Math.round(minutes)} mins`;
+function formatDuration(words: number): string {
+  const seconds = (words / SCRIPTURE_TARGET_WPM) * 60;
+  if (seconds < 60) return `~${Math.max(15, Math.round(seconds / 15) * 15)} sec`;
+  return `~${Math.round(seconds / 60)} min`;
 }
 
 function bibleArtwork(book: number): Passage['artwork'] {
@@ -30,15 +31,16 @@ export function buildChapterPassage(
   rows: readonly VerseRow[],
   opts?: { fromVerse?: number }
 ): ChapterPassage {
+  const selectedRows = opts?.fromVerse == null ? rows : rows.filter((row) => row.verse >= opts.fromVerse!);
   let offset = 0;
-  const verses = rows.map((row) => {
+  const verses = selectedRows.map((row) => {
     const t = tokenizePassage(row.text);
     const entry = { verse: row.verse, wordStart: offset, wordEnd: offset + t.words.length };
     offset += t.words.length;
     return entry;
   });
 
-  const joinedText = rows.map(r => r.text).join('\n\n');
+  const joinedText = selectedRows.map(r => r.text).join('\n\n');
   const tokenized = tokenizePassage(joinedText);
 
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -47,7 +49,7 @@ export function buildChapterPassage(
     }
   }
 
-  const durationStr = formatDuration(estimateMinutes(offset));
+  const durationStr = formatDuration(offset);
 
   const passage: Passage = {
     id: chapterPassageId(ref),
@@ -60,6 +62,13 @@ export function buildChapterPassage(
   };
 
   return { passage, verses };
+}
+
+export function verseBankThreshold(verse: VerseSpan): number {
+  const wordCount = verse.wordEnd - verse.wordStart;
+  return wordCount <= 0
+    ? verse.wordEnd
+    : verse.wordStart + Math.max(1, Math.ceil(wordCount * VERSE_BANK_RATIO));
 }
 
 export function verseIndexAt(cp: ChapterPassage, wordIndex: number): number {

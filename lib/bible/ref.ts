@@ -1,32 +1,28 @@
-import { bookById, TranslationCode, TRANSLATIONS } from './canon';
+import { bookById, TRANSLATIONS, type TranslationCode } from './canon';
 
-export type ChapterRef = `${TranslationCode}:${number}:${number}`;
+export type ChapterRef = `${TranslationCode}.${number}.${number}`;
 
 export type BibleRef = { code: TranslationCode; book: number; chapter: number };
 
 export function parseRef(ref: string | undefined): BibleRef | null {
   if (!ref) return null;
-  const parts = ref.split('.');
-  if (parts.length !== 3) return null;
+  const match = /^([A-Z]+)\.(\d+)\.(\d+)$/.exec(ref);
+  if (!match) return null;
 
-  const [translationStr, bookStr, chapterStr] = parts;
-  
+  const [, translationStr, bookStr, chapterStr] = match;
   if (!TRANSLATIONS[translationStr as TranslationCode]) return null;
 
-  const bookId = parseInt(bookStr, 10);
-  const chapter = parseInt(chapterStr, 10);
-
-  if (isNaN(bookId) || isNaN(chapter)) return null;
+  const bookId = Number(bookStr);
+  const chapter = Number(chapterStr);
+  if (!Number.isSafeInteger(bookId) || !Number.isSafeInteger(chapter)) return null;
 
   const book = bookById(bookId);
-  if (!book) return null;
-
-  if (chapter < 1 || chapter > book.chapters) return null;
+  if (!book || chapter < 1 || chapter > book.chapters) return null;
 
   return {
     code: translationStr as TranslationCode,
     book: bookId,
-    chapter
+    chapter,
   };
 }
 

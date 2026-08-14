@@ -172,9 +172,11 @@ export default function ResultsScreen() {
           </Text>
         </View>
         <SkillCard skills={skills} captions={captions} deltas={deltas} />
-        <View style={styles.coaching}>
-          <AiCoachingCard result={result} />
-        </View>
+        {result.mode !== 'scripture' ? (
+          <View style={styles.coaching}>
+            <AiCoachingCard result={result} />
+          </View>
+        ) : null}
         <View style={styles.breakdown}>
           {result.mode === 'freestyle' ? (
             <TranscriptCard transcript={result.transcript ?? ''} />

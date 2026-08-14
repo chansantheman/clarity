@@ -254,7 +254,16 @@ section('parseRecord: schema upgrades');
   assert(future.ok, 'a newer-schema record is kept, not rejected');
   assertEq(future.ok && future.readOnly, true, 'and marked read-only');
   assertEq(future.ok && future.record.v, 99, 'keeping its own version');
+
+  const futureKey = makeRecordKey(NOW, 99);
+  const futureRaw = JSON.stringify({ ...payload(), id: futureKey, seq: 99, v: 99, mode: 'karaoke' });
+  const futureKv = createMemoryKv({ [futureKey]: futureRaw });
+  const futureStore = makeStore({ kv: futureKv });
+  assertEq(futureStore.getRecords().length, 1, 'unknown future modes remain readable');
+  assertEq(futureKv.getString(futureKey), futureRaw, 'future payload is never rewritten');
+  assertEq(futureStore.getQuarantine().length, 0, 'future payload is not quarantined');
 }
+
 
 // ---------------------------------------------------------------------------
 section('store: hydrate, append, snapshot identity');

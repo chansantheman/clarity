@@ -3,7 +3,7 @@
 
 export type SkillKey = 'accuracy' | 'fluency' | 'intonation' | 'pace' | 'fillers';
 
-export type SessionMode = 'passage' | 'drill' | 'freestyle';
+export type SessionMode = 'passage' | 'drill' | 'freestyle' | 'scripture';
 
 /**
  * How a session ended. Only 'completed' and 'stopped' are scorable: the others

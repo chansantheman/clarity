@@ -62,7 +62,8 @@
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition to follow along as you read."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true

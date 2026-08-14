@@ -65,11 +65,11 @@ export function makeRecordKey(completedAt: number, seq: number): string {
 }
 
 export function parseRecordKey(key: string): { completedAt: number; seq: number } | null {
-  if (!key.startsWith(KEY.record)) return null;
-  const [t, s] = key.slice(KEY.record.length).split('/');
-  const completedAt = Number(t);
-  const seq = Number(s);
-  if (!Number.isFinite(completedAt) || !Number.isFinite(seq)) return null;
+  const match = /^s\/(\d{16})\/(\d{8})$/.exec(key);
+  if (!match) return null;
+  const completedAt = Number(match[1]);
+  const seq = Number(match[2]);
+  if (!Number.isSafeInteger(completedAt) || !Number.isSafeInteger(seq)) return null;
   return { completedAt, seq };
 }
 
@@ -91,7 +91,7 @@ export function normalizeWord(word: string): string {
 const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isString = (v: unknown): v is string => typeof v === 'string';
 
-const MODES: readonly SessionMode[] = ['passage', 'drill', 'freestyle'];
+const MODES: readonly SessionMode[] = ['passage', 'drill', 'freestyle', 'scripture'];
 const REASONS: readonly SessionEndedReason[] = [
   'completed',
   'stopped',
@@ -160,8 +160,14 @@ export function parseRecord(raw: unknown, options: ParseOptions = {}): ParseResu
     return { ok: false, reason: 'bad-completedAt' };
   }
 
+  // Check the version before enum fields. A newer build may add a mode this
+  // build does not know; it must remain usable in memory and read-only on disk,
+  // never be quarantined as bad history during an OTA rollback.
+  const version = isFiniteNumber(r.v) ? r.v : 1;
+  const readOnly = version > RECORD_SCHEMA_VERSION;
   const mode = r.mode;
-  if (!isString(mode) || !MODES.includes(mode as SessionMode)) {
+  const knownMode = isString(mode) && MODES.includes(mode as SessionMode);
+  if (!knownMode && !readOnly) {
     return { ok: false, reason: 'bad-mode' };
   }
 
@@ -172,10 +178,6 @@ export function parseRecord(raw: unknown, options: ParseOptions = {}): ParseResu
 
   const wordCounts = parseWordCounts(r.wordCounts);
   if (!wordCounts) return { ok: false, reason: 'bad-wordCounts' };
-
-  // A newer schema is kept rather than rejected; see `ParseResult.readOnly`.
-  const version = isFiniteNumber(r.v) ? r.v : 1;
-  const readOnly = version > RECORD_SCHEMA_VERSION;
 
   const seq = isFiniteNumber(r.seq) ? Math.floor(r.seq) : (options.fallbackSeq ?? 0);
 
@@ -201,7 +203,9 @@ export function parseRecord(raw: unknown, options: ParseOptions = {}): ParseResu
     seq,
     completedAt,
     tzOffsetMinutes,
-    mode: mode as SessionMode,
+    // Unknown modes from newer schemas are represented in memory as passage;
+    // readOnly ensures this normalized view is never written back over them.
+    mode: (knownMode ? mode : 'passage') as SessionMode,
     endedReason,
     durationMs,
     accuracy: measure(r.accuracy, 0) ?? 0,

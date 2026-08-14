@@ -61,8 +61,17 @@ export function useSessionCheckpoint({
   // Live values read by the interval and the AppState handler without making
   // either of them re-subscribe on every tick.
   const latest = useRef({ status, elapsedMs, spokenWords, fillerCount, onBackground });
+  const previousStatus = useRef(status);
   useEffect(() => {
+    const wasListening = previousStatus.current === 'listening';
     latest.current = { status, elapsedMs, spokenWords, fillerCount, onBackground };
+    previousStatus.current = status;
+    if (wasListening && status === 'paused') {
+      // The interval only flushes while listening. Persist the exact active
+      // frontier at the pause boundary before the user can be killed in the
+      // paused state.
+      checkpointSession({ elapsedMs, spokenWords, fillerCount });
+    }
   }, [status, elapsedMs, spokenWords, fillerCount, onBackground]);
 
   const metaRef = useRef(meta);

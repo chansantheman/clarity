@@ -103,6 +103,9 @@ export type ScoreInput = {
  */
 export function isScorable(input: ScoreInput): boolean {
   const reason = input.endedReason;
+  // Scripture readings count for effort and Bible progress, but KJV/BSB reading
+  // at the scripture pace is not comparable to the pronunciation corpus.
+  if (input.mode === 'scripture') return false;
   if (reason === 'abandoned' || reason === 'interrupted' || reason === 'error') return false;
   if (input.spokenWords == null) return true;
   return input.durationMs >= MIN_SCORED_MS && input.spokenWords >= MIN_SCORED_WORDS;

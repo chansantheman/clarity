@@ -18,3 +18,4 @@ export const usePracticeSession: (passage: Passage) => PracticeSession = USE_MOC
   : usePracticeSessionReal;
 
 export { USE_MOCK };
+export type { PracticeSession };

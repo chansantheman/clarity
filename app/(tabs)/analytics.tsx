@@ -17,13 +17,19 @@ import { palette } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSessionRecords, useWords } from '@/hooks/use-session-history';
+import type { SessionMode } from '@/types/history';
 import { useNow } from '@/hooks/use-now';
 import { useSpeakingSummary } from '@/hooks/use-speaking-summary';
 import { formatDayRange, timeAgo } from '@/lib/format';
 import { speakingScore } from '@/lib/score';
 import { bestSession, longestStreakRange, startOfLocalDay, totals } from '@/lib/stats';
 
-const MODE_LABELS = { passage: 'Passage', drill: 'Drill', freestyle: 'Freestyle' } as const;
+const MODE_LABELS: Record<SessionMode, string> = {
+  passage: 'Passage',
+  drill: 'Drill',
+  freestyle: 'Freestyle',
+  scripture: 'Scripture',
+};
 
 const RANGES = ['Week', 'Month', 'All time'] as const;
 /** Days each range scores over. All time is resolved from the first record. */

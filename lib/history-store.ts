@@ -200,6 +200,8 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
    * skipped on every boot is strictly better than one that got deleted.
    */
   function quarantine(key: string, raw: string, reason: string) {
+    // Deferred repairs must not act on a newer value written after hydration.
+    if (kv.getString(key) !== raw) return;
     const at = now();
     const qKey = `${KEY.quarantine}${at.toString().padStart(16, '0')}/${key.slice(-24)}`;
     const payload = JSON.stringify({ at, key, reason, raw: raw.slice(0, 4096) });
@@ -368,51 +370,95 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
   function recoverInflight(into: SessionRecord[], deferred: (() => void)[]) {
     const raw = kv.getString(META_KEY.inflight);
     if (raw == null) return;
-    kv.remove(META_KEY.inflight);
 
     let checkpoint: InflightSession;
     try {
       checkpoint = JSON.parse(raw) as InflightSession;
     } catch {
+      deferred.push(() => quarantine(META_KEY.inflight, raw, 'invalid-json'));
       return;
     }
+
+    if (!checkpoint || typeof checkpoint !== 'object' || Array.isArray(checkpoint)) {
+      deferred.push(() => quarantine(META_KEY.inflight, raw, 'not-an-object'));
+      return;
+    }
+    const modes: readonly SessionMode[] = ['passage', 'drill', 'freestyle', 'scripture'];
+    if (!modes.includes(checkpoint.mode)) {
+      deferred.push(() => quarantine(META_KEY.inflight, raw, 'bad-mode'));
+      return;
+    }
+
     // Deliberately NO wall-clock staleness check. Hydration runs once per JS
     // context, before any session can start, so a checkpoint found here is always
-    // from a previous run — and the most common real case is the user reopening
-    // the app seconds after it died, which a staleness window would discard.
-    // Worth enough practice time to be worth recovering, and only if they spoke.
-    if (!Number.isFinite(checkpoint.elapsedMs) || checkpoint.elapsedMs < MIN_MEANINGFUL_MS) return;
-    if (checkpoint.spokenWords <= 0) return;
+    // from a previous run — and reopening after a crash must retain its minutes.
+    if (!Number.isFinite(checkpoint.elapsedMs) || checkpoint.elapsedMs < MIN_MEANINGFUL_MS) {
+      deferred.push(() => removeInflightIfUnchanged(raw));
+      return;
+    }
+    if (!Number.isFinite(checkpoint.spokenWords) || checkpoint.spokenWords <= 0) {
+      deferred.push(() => removeInflightIfUnchanged(raw));
+      return;
+    }
 
     seqCounter += 1;
-    kv.set(META_KEY.seq, seqCounter);
+    try {
+      kv.set(META_KEY.seq, seqCounter);
+      if (kv.getNumber(META_KEY.seq) !== seqCounter) throw new Error('counter verify failed');
+    } catch (error) {
+      seqCounter -= 1;
+      warn('[history] could not reserve a recovery sequence number', error);
+      return;
+    }
+
+    const completedAt = Number.isFinite(checkpoint.updatedAt) && checkpoint.updatedAt > 0
+      ? checkpoint.updatedAt
+      : now();
     const record = buildRecord(
       {
-      mode: checkpoint.mode,
-      endedReason: 'interrupted',
-      passageId: checkpoint.passageId,
-      topicId: checkpoint.topicId,
-      contentTitle: checkpoint.contentTitle,
-      durationMs: checkpoint.elapsedMs,
-      accuracy: 0,
-      fluency: 0,
-      completeness: 0,
-      intonation: 0,
-      paceWpm: 0,
-      targetWpm: checkpoint.targetWpm ?? 0,
-      fillerCount: checkpoint.fillerCount ?? 0,
-      spokenWords: checkpoint.spokenWords,
-      source: 'live',
+        mode: checkpoint.mode,
+        endedReason: 'interrupted',
+        passageId: checkpoint.passageId,
+        topicId: checkpoint.topicId,
+        contentTitle: checkpoint.contentTitle,
+        durationMs: checkpoint.elapsedMs,
+        accuracy: 0,
+        fluency: 0,
+        completeness: 0,
+        intonation: 0,
+        paceWpm: 0,
+        targetWpm: Number.isFinite(checkpoint.targetWpm) && checkpoint.targetWpm >= 0 ? checkpoint.targetWpm : 0,
+        fillerCount: Number.isFinite(checkpoint.fillerCount) && checkpoint.fillerCount >= 0 ? checkpoint.fillerCount : 0,
+        spokenWords: checkpoint.spokenWords,
+        source: 'live',
         wordCounts: { good: 0, mispronounced: 0, omitted: 0, inserted: 0 },
         challengingWords: [],
       },
       seqCounter,
-      checkpoint.updatedAt,
+      completedAt,
     );
 
-    into.push(record);
-    recoveredInflight += 1;
-    deferred.push(() => void writeRecord(record));
+    // Do not expose the recovered record until its write verifies. Keeping it
+    // only in `into` before the deferred write would violate memory-equals-disk.
+    deferred.push(() => {
+      if (kv.getString(META_KEY.inflight) !== raw) return;
+      if (!writeRecord(record)) return;
+      removeInflightIfUnchanged(raw);
+      const current = records ?? into;
+      if (current.some((existing) => existing.id === record.id)) return;
+      records = [...current, record].sort((a, b) => a.completedAt - b.completedAt || a.seq - b.seq);
+      recoveredInflight += 1;
+    });
+  }
+
+  function removeInflightIfUnchanged(raw: string) {
+    if (kv.getString(META_KEY.inflight) !== raw) return;
+    try {
+      kv.remove(META_KEY.inflight);
+      if (kv.contains(META_KEY.inflight)) throw new Error('checkpoint remove verify failed');
+    } catch (error) {
+      warn('[history] could not clear the in-flight checkpoint', error);
+    }
   }
 
   // --- writes ----------------------------------------------------------------
@@ -437,6 +483,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
    * object ourselves, so key order is fixed and a string compare is exact. */
   function writeRecord(record: SessionRecord): boolean {
     const json = JSON.stringify(record);
+    const previous = kv.getString(record.id);
     try {
       kv.set(record.id, json);
       if (kv.getString(record.id) !== json) throw new Error('verify mismatch');
@@ -445,9 +492,14 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
       lastError = 'persist-failed';
       warn(`[history] failed to persist ${record.id}`, error);
       try {
-        kv.remove(record.id);
-      } catch {
-        // Nothing more to do; hydrate will quarantine a partial row.
+        if (previous === undefined) {
+          kv.remove(record.id);
+        } else {
+          kv.set(record.id, previous);
+          if (kv.getString(record.id) !== previous) throw new Error('restore verify failed');
+        }
+      } catch (restoreError) {
+        warn(`[history] failed to restore ${record.id}`, restoreError);
       }
       return false;
     }
@@ -543,6 +595,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     seqCounter = Math.max(seqCounter, record.seq);
     kv.set(META_KEY.seq, seqCounter);
     appendToSnapshot(record);
+    notify();
     return true;
   }
 
