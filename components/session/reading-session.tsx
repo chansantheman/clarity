@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { BackHandler, StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ReactNode } from 'react';
 
@@ -14,7 +14,7 @@ import { useSessionCheckpoint } from '@/hooks/use-session-checkpoint';
 import { tokenizePassage } from '@/lib/passage-text';
 import { recordSession } from '@/services/session-history';
 import type { SessionEndedReason, SessionMode } from '@/types/history';
-import type { Passage } from '@/types/session';
+import type { Passage, SessionResult } from '@/types/session';
 import { useSessionContext } from '@/app/session/_layout';
 
 function dismissToHome() {
@@ -30,6 +30,7 @@ export type SessionHandlers = {
   onRestart: () => void;
   onStop: () => void;
   onErrorDismiss: () => void;
+  onContinue: () => void;
 };
 
 export type WriteResult = ReturnType<typeof recordSession>;
@@ -39,8 +40,11 @@ export type ReadingSessionProps = {
   meta: { mode: SessionMode; passageId?: string; topicId?: string; contentTitle?: string };
   renderTopBarChild: (s: PracticeSession) => ReactNode;
   renderControls: (s: PracticeSession, h: SessionHandlers) => ReactNode;
-  onFinished?: (result: any, endedReason: SessionEndedReason, written: WriteResult) => void;
+  onFinished?: (result: SessionResult, endedReason: SessionEndedReason, written: WriteResult) => void;
   onWordIndex?: (index: number) => void;
+  /** Bible sessions hold the completed state for the next-chapter affordance. */
+  navigateToResults?: boolean;
+  onContinue?: () => void;
 };
 
 export function ReadingSession({
@@ -50,6 +54,8 @@ export function ReadingSession({
   renderControls,
   onFinished,
   onWordIndex,
+  navigateToResults = true,
+  onContinue,
 }: ReadingSessionProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const colors = sessionColors[scheme];
@@ -66,6 +72,7 @@ export function ReadingSession({
 
   const sessionRef = useRef(session);
   const navigatedRef = useRef(false);
+  const terminalRef = useRef(false);
 
   useEffect(() => {
     sessionRef.current = session;
@@ -80,20 +87,16 @@ export function ReadingSession({
   }, [session.currentWordIndex, onWordIndex]);
 
   useEffect(() => {
-    sessionRef.current.start();
+    void sessionRef.current.start();
     return () => {
+      // A terminal operation may have already called stop() and navigated away;
+      // cancelling here would abort its audio processing and delete its files.
       const s = sessionRef.current;
-      if (s.status === 'listening' || s.status === 'paused') s.cancel();
+      if (!terminalRef.current && (s.status === 'listening' || s.status === 'paused')) s.cancel();
     };
   }, []);
 
   const prevRetryRef = useRef(retryToken);
-  useEffect(() => {
-    if (retryToken === prevRetryRef.current) return;
-    prevRetryRef.current = retryToken;
-    navigatedRef.current = false;
-    sessionRef.current.restart();
-  }, [retryToken]);
 
   const checkpoint = useSessionCheckpoint({
     status: session.status,
@@ -104,23 +107,47 @@ export function ReadingSession({
     onBackground: () => sessionRef.current.pause(),
   });
 
+  useEffect(() => {
+    if (retryToken === prevRetryRef.current) return;
+    prevRetryRef.current = retryToken;
+    navigatedRef.current = false;
+    terminalRef.current = false;
+    sessionRef.current.restart();
+    checkpoint.begin();
+  }, [checkpoint, retryToken]);
+
   const finishSession = useCallback(
     async (endedReason: SessionEndedReason = 'stopped') => {
       if (navigatedRef.current) return;
       navigatedRef.current = true;
+      terminalRef.current = true;
       try {
-        const result = await sessionRef.current.stop();
+        const rawResult = await sessionRef.current.stop();
+        const result = meta.mode === 'scripture' ? { ...rawResult, mode: 'scripture' as const } : rawResult;
         const written = recordSession(result, { ...meta, endedReason });
-        checkpoint.end();
+        // A failed durable write must leave the checkpoint available for crash
+        // recovery. Silence is a deliberate discard and can be cleared safely.
+        if (written.ok || (written.ok === false && written.reason === 'no-speech')) checkpoint.end();
         setResult(result, written.ok ? written.record.id : null);
         onFinished?.(result, endedReason, written);
-        router.push('/session/results');
+        if (navigateToResults) router.push('/session/results');
       } catch {
         navigatedRef.current = false;
       }
     },
-    [setResult, meta, checkpoint, onFinished],
+    [setResult, meta, checkpoint, onFinished, navigateToResults],
   );
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!terminalRef.current) {
+        void finishSession('stopped');
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [finishSession]);
 
   useEffect(() => {
     if (session.status === 'done') finishSession('completed');
@@ -129,14 +156,19 @@ export function ReadingSession({
   const handleDismiss = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const s = sessionRef.current;
-    const live = s.status === 'listening' || s.status === 'paused';
+    if (s.status === 'processing') return;
+    const shouldPersist = s.status === 'listening' || s.status === 'paused' || s.status === 'error';
     navigatedRef.current = true;
-    if (live) {
+    terminalRef.current = true;
+    if (shouldPersist) {
+      const endedReason: SessionEndedReason = s.status === 'error' ? 'error' : 'abandoned';
       void s
         .stop()
-        .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
-        .catch(() => {})
-        .finally(() => checkpoint.end());
+        .then((result) => {
+          const written = recordSession(result, { ...meta, endedReason });
+          if (written.ok || (written.ok === false && written.reason === 'no-speech')) checkpoint.end();
+        })
+        .catch(() => {});
     } else {
       checkpoint.end();
     }
@@ -164,16 +196,20 @@ export function ReadingSession({
     const s = sessionRef.current;
     if (s.status !== 'listening' && s.status !== 'paused') {
       navigatedRef.current = false;
+      terminalRef.current = false;
       s.restart();
+      checkpoint.begin();
       return;
     }
     navigatedRef.current = true;
+    terminalRef.current = true;
     void s
       .stop()
       .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
       .catch(() => {})
       .finally(() => {
         navigatedRef.current = false;
+        terminalRef.current = false;
         sessionRef.current.restart();
         checkpoint.begin();
       });
@@ -199,8 +235,9 @@ export function ReadingSession({
     onPauseToggle: handlePauseToggle,
     onRestart: handleRestart,
     onStop: handleStop,
-    onErrorDismiss: handleDismiss
-  }), [handlePauseToggle, handleRestart, handleStop, handleDismiss]);
+    onErrorDismiss: handleDismiss,
+    onContinue: onContinue ?? (() => router.push('/session/results')),
+  }), [handlePauseToggle, handleRestart, handleStop, handleDismiss, onContinue]);
 
   return (
     <View style={[styles.screen, { backgroundColor: screenPalette.background }]}>
