@@ -10,6 +10,7 @@ export type PassageCategory =
   | 'poetry'
   | 'twisters'
   | 'drill'
+  | 'bible'
   | 'custom';
 
 /** A practice passage: home-card metadata plus the reading content. */
